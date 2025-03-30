@@ -8,18 +8,23 @@
 </template>
 
 <script setup>
-import Sidebar from '../components/Sidebar.vue';
-import DateDetailsViewer from '../components/DateDetailsViewer.vue';
+import Sidebar from "../components/Sidebar.vue";
+import DateDetailsViewer from "../components/DateDetailsViewer.vue";
 </script>
 
 <style scoped>
 .main-content {
-  margin-left: 240px; /* Отступ равный ширине сайдбара */
+    margin-left: 300px; /* Увеличиваем отступ под новую ширину сайдбара */
 }
 
 @media (max-width: 640px) {
-  .main-content {
-    margin-left: 0; /* На мобильных можно убрать отступ */
-  }
+    .main-content {
+        margin-left: 0; /* На мобильных убираем отступ */
+    }
+
+    /* Опционально: можно скрыть сайдбар на мобильных или сделать его адаптивным */
+    .sidebar {
+        width: 100%; /* Или другое значение для мобильных */
+    }
 }
 </style>
