@@ -68,7 +68,7 @@ onMounted(() => {
     z-index: 10;
     height: 100vh;
     overflow-y: auto;
-    width: 300px; /* Увеличиваем ширину сайдбара */
+    width: 205px; /* Увеличиваем ширину сайдбара */
 }
 
 .uk-nav a {
