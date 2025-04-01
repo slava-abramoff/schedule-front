@@ -61,13 +61,15 @@
 
                 <div class="uk-margin">
                     <label class="uk-form-label custom-label">Платформа:</label>
-                    <input
-                        class="uk-input custom-input"
-                        type="text"
+                    <select
+                        class="uk-select custom-input"
                         v-model="futureLecture.platform"
-                        placeholder="Введите платформу"
                         required
-                    />
+                    >
+                        <option value="">Выберите платформу</option>
+                        <option value="VK">VK трансляции</option>
+                        <option value="sferum">SFERUM</option>
+                    </select>
                 </div>
 
                 <div class="uk-margin">

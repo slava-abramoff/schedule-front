@@ -25,7 +25,7 @@
             <ul class="uk-list button-list">
                 <li>
                     <button
-                        class="uk-button uk-button-primary custom-button"
+                        class="uk-button uk-button-secondary custom-button"
                         @click="openDay"
                     >
                         <span
@@ -35,7 +35,7 @@
                         Расписание
                     </button>
                 </li>
-                <li>
+                <!-- <li>
                     <button
                         class="uk-button uk-button-secondary custom-button"
                         @click="connect"
@@ -46,7 +46,7 @@
                         ></span>
                         Подключение
                     </button>
-                </li>
+                </li> -->
             </ul>
         </div>
     </div>
