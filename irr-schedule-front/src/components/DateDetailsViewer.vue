@@ -170,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import {
     getDay,
@@ -180,17 +180,11 @@ import {
 } from "../api/api";
 import ModalWrapper from "./ModalWrapper.vue";
 
-const route = useRoute();
+// Ключ для localStorage
+const STORAGE_KEY = "lectureTableColumnsSettings";
 
-// Состояние модального окна
-const modalRef = ref(null);
-
-// Открытие и закрытие модального окна
-const openModal = () => modalRef.value.openModal();
-const closeModal = () => modalRef.value.closeModal();
-
-// Определение столбцов с возможностью скрытия
-const columns = ref({
+// Дефолтные значения столбцов
+const defaultColumns = {
     id: { label: "ID", visible: true },
     start_time: { label: "Начало", visible: true },
     end_time: { label: "Конец", visible: true },
@@ -206,7 +200,37 @@ const columns = ref({
     account: { label: "Аккаунт", visible: true },
     commentary: { label: "Комментарий", visible: true },
     actions: { label: "Действия", visible: true },
-});
+};
+
+// Инициализация столбцов
+const columns = ref({});
+
+// Функция для загрузки настроек из localStorage
+const loadColumnsFromStorage = () => {
+    const savedColumns = localStorage.getItem(STORAGE_KEY);
+    if (savedColumns && savedColumns !== "undefined") {
+        try {
+            columns.value = JSON.parse(savedColumns);
+        } catch (e) {
+            console.error("Ошибка парсинга localStorage:", e);
+            columns.value = { ...defaultColumns }; // Если парсинг не удался, берём дефолт
+        }
+    } else {
+        columns.value = { ...defaultColumns }; // Если ничего нет или "undefined", берём дефолт
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value)); // Сразу сохраняем
+    }
+};
+
+// Функция для сохранения настроек в localStorage
+const saveColumnsToStorage = () => {
+    if (columns.value && Object.keys(columns.value).length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value));
+    } else {
+        console.warn("columns пустой, сохраняем дефолтные значения");
+        columns.value = { ...defaultColumns };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value));
+    }
+};
 
 // Фильтр видимых столбцов
 const visibleColumns = computed(() => {
@@ -215,17 +239,22 @@ const visibleColumns = computed(() => {
     );
 });
 
+const route = useRoute();
+const modalRef = ref(null);
 const tableData = ref([]);
-const scheduleDate = ref(route.params.date); // Оставляем как есть для отображения
+const scheduleDate = ref(route.params.date);
 const editingCell = ref({ row: null, col: null });
 const lecture = ref({});
+
+// Открытие и закрытие модального окна
+const openModal = () => modalRef.value.openModal();
+const closeModal = () => modalRef.value.closeModal();
 
 // Загрузка данных
 const fetchLectures = async () => {
     const response = await getDay(route.params.date);
-    tableData.value = response.data; // Храним в ISO формате
+    tableData.value = response.data;
     if (response.data.length > 0) {
-        // Отображаем дату в формате YYYY.MM.DD, но храним оригинал для API
         scheduleDate.value = response.data[0].date.replace(/-/g, ".");
     }
 };
@@ -249,24 +278,24 @@ const displayValue = (item, key) => {
 const toTimeInput = (isoTime) => {
     if (!isoTime) return "";
     const date = new Date(isoTime);
-    return isNaN(date.getTime()) ? "" : date.toISOString().substring(11, 16); // HH:MM
+    return isNaN(date.getTime()) ? "" : date.toISOString().substring(11, 16);
 };
 
 // Преобразование времени в ISO формат для отправки на сервер
 const toISOFormat = (time, date) => {
-    if (!time || !date) return null; // Сервер может ожидать null вместо пустой строки
-    const isoDate = date.replace(/\./g, "-"); // Преобразуем обратно в YYYY-MM-DD
-    return `${isoDate}T${time}:00.000Z`; // Формат: "2025-03-25T10:00:00.000Z"
+    if (!time || !date) return null;
+    const isoDate = date.replace(/\./g, "-");
+    return `${isoDate}T${time}:00.000Z`;
 };
 
 // Добавление новой лекции
 const addLecture = async () => {
-    const isoDate = scheduleDate.value.replace(/\./g, "-"); // Преобразуем в YYYY-MM-DD
+    const isoDate = scheduleDate.value.replace(/\./g, "-");
     const newLecture = {
         date: isoDate,
         start_time: toISOFormat("10:00", isoDate),
         end_time: toISOFormat("12:00", isoDate),
-        abnormal_time: null, // Устанавливаем null для пустых полей времени
+        abnormal_time: null,
         platform: "",
         corps: "A",
         location: "",
@@ -279,7 +308,7 @@ const addLecture = async () => {
         commentary: "",
     };
 
-    console.log("Sending new lecture:", newLecture); // Логирование для отладки
+    console.log("Sending new lecture:", newLecture);
     const result = await createLecture(newLecture);
     if (result.success) {
         tableData.value.push(result.data);
@@ -314,7 +343,7 @@ const startEditing = (row, col) => {
 
 // Сохранение изменений для обычных полей
 const saveEdit = async (row, col, event) => {
-    tableData.value[row][col] = event.target.innerText || ""; // Пустая строка вместо undefined
+    tableData.value[row][col] = event.target.innerText || "";
     await updateRow(row);
     stopEditing();
 };
@@ -324,7 +353,7 @@ const saveTime = async (row, col, event) => {
     const timeInput = event.target.value;
     tableData.value[row][col] = timeInput
         ? toISOFormat(timeInput, scheduleDate.value)
-        : null; // null для пустого времени
+        : null;
     await updateRow(row);
     stopEditing();
 };
@@ -343,7 +372,7 @@ const confirmDelete = (row) => {
 
 // Удаление лекции
 const deletedLecture = async (data) => {
-    console.log("Deleting lecture:", data.id); // Логирование для отладки
+    console.log("Deleting lecture:", data.id);
     const result = await deleteLecture(data.id);
     if (result.success) {
         const index = tableData.value.findIndex((item) => item.id === data.id);
@@ -363,7 +392,7 @@ const deletedLecture = async (data) => {
 // Отправка обновлений на сервер
 const updateRow = async (row) => {
     const updatedData = { ...tableData.value[row] };
-    console.log("Updating row:", updatedData); // Логирование для отладки
+    console.log("Updating row:", updatedData);
     const result = await updateLecture(updatedData.id, updatedData);
     if (!result.success) {
         console.error("Ошибка обновления:", result.message);
@@ -384,9 +413,26 @@ const toggleColumnsDropdown = () => {
     UIkit.dropdown(".uk-dropdown").toggle();
 };
 
+// Загрузка данных и настроек при монтировании
 onMounted(() => {
+    loadColumnsFromStorage(); // Загружаем настройки столбцов
     fetchLectures();
 });
+
+// Сохранение настроек перед размонтированием
+onUnmounted(() => {
+    saveColumnsToStorage();
+});
+
+// Отслеживание изменений в columns и сохранение в localStorage
+import { watch } from "vue";
+watch(
+    () => columns.value,
+    () => {
+        saveColumnsToStorage();
+    },
+    { deep: true },
+);
 </script>
 
 <style scoped>

@@ -180,11 +180,14 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted } from "vue";
-import { getConfs, updateConf } from "../api/api"; // Импорт функций
+import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
+import { getConfs, updateConf } from "../api/api";
 
-// Определение столбцов
-const columns = ref({
+// Ключ для localStorage
+const STORAGE_KEY = "tableColumnsSettings";
+
+// Дефолтные значения столбцов
+const defaultColumns = {
     id: { label: "ID", visible: true },
     event_name: { label: "Мероприятие", visible: true },
     full_name: { label: "ФИО", visible: true },
@@ -199,7 +202,37 @@ const columns = ref({
     short_url: { label: "Short URL", visible: true },
     user: { label: "Админ", visible: true },
     commentary: { label: "Комментарий", visible: true },
-});
+};
+
+// Инициализация столбцов
+const columns = ref({});
+
+// Функция для загрузки настроек из localStorage
+const loadColumnsFromStorage = () => {
+    const savedColumns = localStorage.getItem(STORAGE_KEY);
+    if (savedColumns && savedColumns !== "undefined") {
+        try {
+            columns.value = JSON.parse(savedColumns);
+        } catch (e) {
+            console.error("Ошибка парсинга localStorage:", e);
+            columns.value = { ...defaultColumns }; // Если парсинг не удался, берём дефолт
+        }
+    } else {
+        columns.value = { ...defaultColumns }; // Если ничего нет или "undefined", берём дефолт
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value)); // Сразу сохраняем
+    }
+};
+
+// Функция для сохранения настроек в localStorage
+const saveColumnsToStorage = () => {
+    if (columns.value && Object.keys(columns.value).length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value));
+    } else {
+        console.warn("columns пустой, сохраняем дефолтные значения");
+        columns.value = { ...defaultColumns };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(columns.value));
+    }
+};
 
 // Фильтр видимых столбцов
 const visibleColumns = computed(() => {
@@ -216,8 +249,9 @@ const editingCell = ref({ row: null, col: null });
 
 const role = ref("");
 
-// Загрузка данных при монтировании
+// Загрузка данных и настроек при монтировании
 onMounted(async () => {
+    loadColumnsFromStorage(); // Загружаем настройки столбцов
     role.value = localStorage.getItem("role");
     const result = await getConfs();
     if (result.success) {
@@ -230,6 +264,21 @@ onMounted(async () => {
         });
     }
 });
+
+// Сохранение настроек перед размонтированием
+onUnmounted(() => {
+    saveColumnsToStorage();
+});
+
+// Отслеживание изменений в columns и сохранение в localStorage
+import { watch } from "vue";
+watch(
+    () => columns.value,
+    () => {
+        saveColumnsToStorage();
+    },
+    { deep: true },
+);
 
 // Форматирование значений для отображения
 const getDisplayValue = (item, key) => {
@@ -248,7 +297,6 @@ const getDisplayValue = (item, key) => {
 
 // Начало редактирования с проверкой роли
 const startEditing = (row, col) => {
-    // Разрешаем редактирование только если роль не "viewer"
     if (role.value !== "viewer") {
         editingCell.value = { row, col };
         nextTick(() => {
