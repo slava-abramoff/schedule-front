@@ -242,9 +242,7 @@ const scheduleLecture = async () => {
         const result = await createLecture(lectureData);
         if (result.success) {
             console.log("Received data:", result.data);
-            lectures.value.push(result.data);
             closeModal();
-            await router.push(`/lectures/${result.data.date}`);
             futureLecture.value = {
                 date: "",
                 start_time: "",
@@ -256,6 +254,7 @@ const scheduleLecture = async () => {
                 groups: "",
                 lectors: "",
             };
+            router.push(`/lectures/${result.data.date}`);
         } else {
             throw new Error(result.message || "Неизвестная ошибка сервера");
         }
