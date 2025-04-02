@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Создаём экземпляр Axios
 const api = axios.create({
-  baseURL: "http://localhost:3000/",
+  baseURL: "https://table.edu-penza.ru",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -48,7 +48,7 @@ api.interceptors.response.use(
  */
 export const login = async (username, password) => {
   try {
-    const response = await api.post("/login", { username, password });
+    const response = await api.post("/auth/login", { username, password });
     return { success: true, data: response.data }; // Успешный результат
   } catch (error) {
     // Передаём ошибку дальше с нормализованной структурой
@@ -69,7 +69,7 @@ export const login = async (username, password) => {
  */
 export const createConf = async (data) => {
   try {
-    const response = await api.post("/conf", data);
+    const response = await api.post("/api/conf", data);
     return { success: true, data: response.data }; // Успешный результат
   } catch (error) {
     // Передаём ошибку дальше с нормализованной структурой
