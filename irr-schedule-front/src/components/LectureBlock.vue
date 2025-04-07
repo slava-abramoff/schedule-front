@@ -53,6 +53,8 @@
 </template>
 
 <script>
+import { formatDate } from '../utils/formatDate';
+
 export default {
     props: {
         data: {
@@ -62,7 +64,7 @@ export default {
     },
     computed: {
         formattedDate() {
-            return this.data.date.replace(/-/g, ".");
+            return formatDate(this.data.date);
         },
         formattedGroups() {
             return this.data.groups.join(", ");
