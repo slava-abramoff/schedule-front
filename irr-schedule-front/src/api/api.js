@@ -1,8 +1,10 @@
 import axios from "axios";
+import router from "../router/index"
+
 
 // Создаём экземпляр Axios
 const api = axios.create({
-  baseURL: "https://table.edu-penza.ru",
+  baseURL: "http://localhost:3000",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -23,6 +25,26 @@ api.interceptors.request.use(
 );
 
 // Перехватчик ответов (обработка ошибок)
+// api.interceptors.response.use(
+//   (response) => response, // Успешный ответ просто возвращаем
+//   (error) => {
+//     // Здесь можно обработать конкретные ошибки
+//     if (error.response) {
+//       // Сервер ответил с ошибкой (например, 400, 401, 500)
+//       const status = error.response.status;
+//       const message =
+//         error.response.data?.message || "Неизвестная ошибка сервера";
+//       return Promise.reject({ status, message, data: error.response.data });
+//     } else if (error.request) {
+//       // Запрос был отправлен, но ответа не получено (например, нет сети)
+//       return Promise.reject({ status: null, message: "Нет ответа от сервера" });
+//     } else {
+//       // Ошибка при настройке запроса
+//       return Promise.reject({ status: null, message: error.message });
+//     }
+//   },
+// );
+
 api.interceptors.response.use(
   (response) => response, // Успешный ответ просто возвращаем
   (error) => {
@@ -32,6 +54,16 @@ api.interceptors.response.use(
       const status = error.response.status;
       const message =
         error.response.data?.message || "Неизвестная ошибка сервера";
+
+      // Проверяем, является ли ошибка 401 и содержит ли она сообщение "Неверный токен"
+      if (status === 401 && error.response.data?.error === "Неверный токен") {
+        console.log('неверный токен')
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        router.push('/login');
+
+      }
+
       return Promise.reject({ status, message, data: error.response.data });
     } else if (error.request) {
       // Запрос был отправлен, но ответа не получено (например, нет сети)
