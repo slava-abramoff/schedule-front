@@ -245,6 +245,7 @@ const tableData = ref([]);
 const scheduleDate = ref(route.params.date);
 const editingCell = ref({ row: null, col: null });
 const lecture = ref({});
+const role = ref("");
 
 // Открытие и закрытие модального окна
 const openModal = () => modalRef.value.openModal();
@@ -323,22 +324,24 @@ const addLecture = async () => {
 
 // Начало редактирования
 const startEditing = (row, col) => {
-    editingCell.value = { row, col };
-    nextTick(() => {
-        if (["start_time", "end_time", "abnormal_time"].includes(col)) {
-            const timeInput = document.querySelector('[ref="timeInput"]');
-            if (timeInput) timeInput.focus();
-        } else if (col === "corps") {
-            const select = document.querySelector('[ref="corpsSelect"]');
-            if (select) select.focus();
-        } else {
-            const editable = document.querySelector(".editable-cell");
-            if (editable) {
-                editable.focus();
-                document.execCommand("selectAll", false, null);
+    if (role.value !== "viewer") {
+        editingCell.value = { row, col };
+        nextTick(() => {
+            if (["start_time", "end_time", "abnormal_time"].includes(col)) {
+                const timeInput = document.querySelector('[ref="timeInput"]');
+                if (timeInput) timeInput.focus();
+            } else if (col === "corps") {
+                const select = document.querySelector('[ref="corpsSelect"]');
+                if (select) select.focus();
+            } else {
+                const editable = document.querySelector(".editable-cell");
+                if (editable) {
+                    editable.focus();
+                    document.execCommand("selectAll", false, null);
+                }
             }
-        }
-    });
+        });
+    }
 };
 
 // Сохранение изменений для обычных полей
@@ -366,8 +369,10 @@ const saveCorps = async (row) => {
 
 // Подтверждение удаления
 const confirmDelete = (row) => {
-    lecture.value = tableData.value[row];
-    openModal();
+    if (role.value !== "viewer") {
+        lecture.value = tableData.value[row];
+        openModal();
+    }
 };
 
 // Удаление лекции
@@ -416,7 +421,8 @@ const toggleColumnsDropdown = () => {
 // Загрузка данных и настроек при монтировании
 onMounted(() => {
     loadColumnsFromStorage(); // Загружаем настройки столбцов
-    fetchLectures();
+    fetchLectures(); // Запрашиваем лекции с сервера
+    role.value = localStorage.getItem("role");
 });
 
 // Сохранение настроек перед размонтированием
