@@ -1,7 +1,7 @@
 <template>
     <div class="uk-flex uk-flex-center uk-flex-middle uk-height-viewport">
         <router-link
-            to="/login"
+            :to="pathToPage()"
             class="uk-button uk-button-default uk-position-top-right uk-margin-small-top uk-margin-small-right"
         >
             Войти
@@ -251,6 +251,10 @@ const handleCreateConf = async () => {
             status: "danger",
         });
     }
+};
+
+const pathToPage = () => {
+    return localStorage.getItem("token") ? "/conferences" : "/login";
 };
 </script>
 
